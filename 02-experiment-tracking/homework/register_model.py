@@ -36,9 +36,9 @@ def train_and_log_model(data_path, params):
         rf.fit(X_train, y_train)
 
         # Evaluate model on the validation and test sets
-        val_rmse = mean_squared_error(y_val, rf.predict(X_val), squared=False)
+        val_rmse = p.sqrt(mean_squared_error(y_val, rf.predict(X_val))
         mlflow.log_metric("val_rmse", val_rmse)
-        test_rmse = mean_squared_error(y_test, rf.predict(X_test), squared=False)
+        test_rmse = p.sqrt(mean_squared_error(y_test, rf.predict(X_test))
         mlflow.log_metric("test_rmse", test_rmse)
 
 
@@ -82,7 +82,7 @@ def run_register_model(data_path: str, top_n: int):
     run_id = best_run.info.run_id
     model_uri = f"runs:/{run_id}/model"
     mlflow.register_model(model_uri, name="rf-best-model")
-    
+
 
 if __name__ == '__main__':
     run_register_model()
