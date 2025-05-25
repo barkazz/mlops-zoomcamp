@@ -2,6 +2,7 @@ import os
 import pickle
 import click
 import mlflow
+import numpy as np
 
 from mlflow.entities import ViewType
 from mlflow.tracking import MlflowClient
