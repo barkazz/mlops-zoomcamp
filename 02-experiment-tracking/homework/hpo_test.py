@@ -59,7 +59,7 @@ def objective(params):
         rf = RandomForestRegressor(**params)
         rf.fit(X_train, y_train)
         preds = rf.predict(X_val)
-        rmse = mean_squared_error(y_val, preds, squared=False)
+        rmse = mean_squared_error(y_val, preds)
         
         # Логгируем в MLflow
         mlflow.log_params(params)

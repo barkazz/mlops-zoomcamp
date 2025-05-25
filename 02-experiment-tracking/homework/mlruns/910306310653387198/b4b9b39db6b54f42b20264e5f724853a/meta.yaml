@@ -1,0 +1,15 @@
+artifact_uri: file:///workspaces/mlops-zoomcamp/02-experiment-tracking/homework/mlruns/910306310653387198/b4b9b39db6b54f42b20264e5f724853a/artifacts
+end_time: 1748206041174
+entry_point_name: ''
+experiment_id: '910306310653387198'
+lifecycle_stage: active
+run_id: b4b9b39db6b54f42b20264e5f724853a
+run_name: blushing-donkey-901
+run_uuid: b4b9b39db6b54f42b20264e5f724853a
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1748206029334
+status: 4
+tags: []
+user_id: codespace
