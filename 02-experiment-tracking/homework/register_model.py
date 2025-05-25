@@ -36,9 +36,9 @@ def train_and_log_model(data_path, params):
         rf.fit(X_train, y_train)
 
         # Evaluate model on the validation and test sets
-        val_rmse = p.sqrt(mean_squared_error(y_val, rf.predict(X_val))
+        val_rmse = p.sqrt(mean_squared_error(y_val, rf.predict(X_val)))
         mlflow.log_metric("val_rmse", val_rmse)
-        test_rmse = p.sqrt(mean_squared_error(y_test, rf.predict(X_test))
+        test_rmse = p.sqrt(mean_squared_error(y_test, rf.predict(X_test)))
         mlflow.log_metric("test_rmse", test_rmse)
 
 
