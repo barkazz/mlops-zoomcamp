@@ -2,8 +2,13 @@ import os
 import pickle
 import click
 
+import mlflow
+
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import mean_squared_error
+
+mlflow.set_tracking_uri("sqlite:///mlflow.db")
+mlflow.set_experiment("nyc-taxi-experiment")
 
 
 def load_pickle(filename: str):
@@ -21,7 +26,7 @@ def run_train(data_path: str):
 
     with mlflow.start_run():
 
-        mlflow.scikit_learn.autolog()
+        mlflow.sklearn.autolog()
 
         mlflow.set_tag("dev", "IBarkov")
 
