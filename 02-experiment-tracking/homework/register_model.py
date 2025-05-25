@@ -9,7 +9,7 @@ from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import mean_squared_error
 
 HPO_EXPERIMENT_NAME = "random-forest-hyperopt"
-EXPERIMENT_NAME = "random-forest-best-models"
+EXPERIMENT_NAME = "random-forest-best-models-1"
 RF_PARAMS = ['max_depth', 'n_estimators', 'min_samples_split', 'min_samples_leaf', 'random_state']
 
 mlflow.set_tracking_uri("http://127.0.0.1:5000")
@@ -36,9 +36,9 @@ def train_and_log_model(data_path, params):
         rf.fit(X_train, y_train)
 
         # Evaluate model on the validation and test sets
-        val_rmse = p.sqrt(mean_squared_error(y_val, rf.predict(X_val)))
+        val_rmse = np.sqrt(mean_squared_error(y_val, rf.predict(X_val)))
         mlflow.log_metric("val_rmse", val_rmse)
-        test_rmse = p.sqrt(mean_squared_error(y_test, rf.predict(X_test)))
+        test_rmse = np.sqrt(mean_squared_error(y_test, rf.predict(X_test)))
         mlflow.log_metric("test_rmse", test_rmse)
 
 
