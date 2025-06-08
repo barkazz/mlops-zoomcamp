@@ -59,7 +59,8 @@ with DAG(
     # Define tasks
     t1 = PythonOperator(
         task_id='extract_data',
-        python_callable=extract_data
+        python_callable=extract_data,
+        do_xcom_push=False,
     )
 
 """    t2 = PythonOperator(
