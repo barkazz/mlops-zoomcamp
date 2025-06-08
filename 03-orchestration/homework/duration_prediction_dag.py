@@ -36,14 +36,17 @@ with DAG(
     default_args=default_args,
 ) as dag:
 
-    def read_dataframe(year, month):
+    def extract_data(year, month):
         url = f'https://d37ci6vzurychx.cloudfront.net/trip-data/green_tripdata_{year}-{month:02d}.parquet'
         df = pd.read_parquet(url)
+        print(df.shape[0], 'rows extracted')
 
         df['duration'] = df.lpep_dropoff_datetime - df.lpep_pickup_datetime
         df.duration = df.duration.apply(lambda td: td.total_seconds() / 60)
 
         df = df[(df.duration >= 1) & (df.duration <= 60)]
+
+        print(df.shape[0], 'rows after filtering')
 
         categorical = ['PULocationID', 'DOLocationID']
         df[categorical] = df[categorical].astype(str)
@@ -56,10 +59,10 @@ with DAG(
     # Define tasks
     t1 = PythonOperator(
         task_id='extract_data',
-        python_callable=extract_data
+        python_callable=extract_data(2023, 3)
     )
 
-    t2 = PythonOperator(
+"""    t2 = PythonOperator(
         task_id='prepare_features',
         python_callable=prepare_features
     )
@@ -72,7 +75,7 @@ with DAG(
     t4 = PythonOperator(
         task_id='evaluate_model',
         python_callable=evaluate
-    )
+    )"""
 
     # Task dependencies
-    t1 >> t2 >> t3 >> t4
+    t1 #>> t2 >> t3 >> t4
