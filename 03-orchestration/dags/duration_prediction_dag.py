@@ -41,7 +41,7 @@ with DAG(
         df = pd.read_parquet(url)
         print(df.shape[0], 'rows extracted')
 
-        df['duration'] = df.lpep_dropoff_datetime - df.lpep_pickup_datetime
+        df['duration'] = df.tpep_dropoff_datetime - df.tpep_pickup_datetime
         df.duration = df.duration.apply(lambda td: td.total_seconds() / 60)
 
         df = df[(df.duration >= 1) & (df.duration <= 60)]
