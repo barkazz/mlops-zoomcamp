@@ -41,7 +41,7 @@ with DAG(
         url = f'https://d37ci6vzurychx.cloudfront.net/trip-data/yellow_tripdata_2023-03.parquet'
         df = pd.read_parquet(url)
 
-        print(df.shape[0], 'rows extracted')
+        #print(df.shape[0], 'rows extracted')
 
         df['duration'] = df.tpep_dropoff_datetime - df.tpep_pickup_datetime
         df.duration = df.duration.dt.total_seconds() / 60
@@ -60,7 +60,6 @@ with DAG(
     t1 = PythonOperator(
         task_id='extract_data',
         python_callable=extract_data,
-        do_xcom_push=False,
     )
 
 """    t2 = PythonOperator(
