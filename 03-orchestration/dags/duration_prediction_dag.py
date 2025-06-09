@@ -2,13 +2,16 @@ from airflow import DAG
 from airflow.operators.python import PythonOperator
 from datetime import datetime, timedelta
 import pandas as pd
-import os
-import pickle
 
-from sklearn.feature_extraction import DictVectorizer
-from sklearn.linear_model import LinearRegression
-from sklearn.metrics import mean_squared_error
-import xgboost as xgb
+from sklearn.model_selection import train_test_split
+
+#import os
+#import pickle
+
+#from sklearn.feature_extraction import DictVectorizer
+#from sklearn.linear_model import LinearRegression
+#from sklearn.metrics import mean_squared_error
+#import xgboost as xgb
 
 #import mlflow
 
@@ -53,13 +56,16 @@ with DAG(
         )
 
         # filter outliers
-        df = df[(df.duration >= 1) & (df.duration <= 60)]
+        df = df[(df['duration'] >= 1) & (df['duration'] <= 60)].copy()
+        #df = df[(df.duration >= 1) & (df.duration <= 60)]
         print(f"{len(df):,} rows after filtering")
 
         # categorical features
-        for col in ('PULocationID', 'DOLocationID'):
-            df[col] = df[col].astype(str)
-        df['PU_DO'] = df['PULocationID'] + '_' + df['DOLocationID']
+        df[['PULocationID', 'DOLocationID']] = df[['PULocationID', 'DOLocationID']].astype(str)
+        
+        #for col in ('PULocationID', 'DOLocationID'):
+        #    df[col] = df[col].astype(str)
+        #df['PU_DO'] = df['PULocationID'] + '_' + df['DOLocationID']
 
         return df
 
