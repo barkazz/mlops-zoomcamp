@@ -296,9 +296,6 @@ services:
       airflow-init:
         condition: service_completed_successfully
 
-volumes:
-  postgres-db-volume:
-
 mlflow:
   build:
     context: .
@@ -307,3 +304,6 @@ mlflow:
     - "5000:5000"
   volumes:
     - "${PWD}/mlflow_data:/home/mlflow_data/"
+
+volumes:
+  postgres-db-volume:
