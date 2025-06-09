@@ -46,6 +46,8 @@ with DAG(
         url = 'https://d37ci6vzurychx.cloudfront.net/trip-data/yellow_tripdata_2023-03.parquet'
         df = pd.read_parquet(url, columns=cols)
 
+        print(f"{len(df):,} rows extracted")
+
         # vectorized duration in minutes
         df['duration'] = (
             df.tpep_dropoff_datetime
