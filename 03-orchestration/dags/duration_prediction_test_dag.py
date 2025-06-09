@@ -92,7 +92,7 @@ def taxi_duration_pipeline():
     def get_config() -> str:
         from airflow.models import Variable
         from airflow.models.param import ParamsDict
-        return "{{ dag_run.conf.get('year_month', '2023-01') }}"
+        return "{{ dag_run.conf.get('year_month', '2023-03') }}"
 
     year_month = get_config()
     data_path = extract_data(year_month)
