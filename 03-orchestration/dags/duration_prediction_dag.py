@@ -24,6 +24,7 @@ default_args = {
     'depends_on_past': False,
     'retries': 1,
     'retry_delay': timedelta(minutes=5),
+    'execution_timeout': timedelta(minutes=10),
 }
 
 # Define the DAG
@@ -37,22 +38,27 @@ with DAG(
 ) as dag:
 
     def extract_data():
+        # Load only necessary columns to reduce memory
+        cols = ['tpep_pickup_datetime', 'tpep_dropoff_datetime', 'PULocationID', 'DOLocationID']
+        url = 'https://d37ci6vzurychx.cloudfront.net/trip-data/yellow_tripdata_2023-03.parquet'
+        df = pd.read_parquet(url, columns=cols)
 
-        url = f'https://d37ci6vzurychx.cloudfront.net/trip-data/yellow_tripdata_2023-03.parquet'
-        df = pd.read_parquet(url)
+        # vectorized duration in minutes
+        df['duration'] = (
+            df.tpep_dropoff_datetime
+            .sub(df.tpep_pickup_datetime)
+            .dt
+            .total_seconds()
+            .div(60)
+        )
 
-        print(df.shape[0], 'rows extracted')
-
-        df['duration'] = df.tpep_dropoff_datetime - df.tpep_pickup_datetime
-        df.duration = df.duration.apply(lambda td: td.total_seconds() / 60)
-
+        # filter outliers
         df = df[(df.duration >= 1) & (df.duration <= 60)]
+        print(f"{len(df):,} rows after filtering")
 
-        print(df.shape[0], 'rows after filtering')
-
-        categorical = ['PULocationID', 'DOLocationID']
-        df[categorical] = df[categorical].astype(str)
-
+        # categorical features
+        for col in ('PULocationID', 'DOLocationID'):
+            df[col] = df[col].astype(str)
         df['PU_DO'] = df['PULocationID'] + '_' + df['DOLocationID']
 
         return df
