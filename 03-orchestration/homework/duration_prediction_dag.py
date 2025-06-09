@@ -2,31 +2,22 @@ from airflow import DAG
 from airflow.operators.python import PythonOperator
 from datetime import datetime, timedelta
 import pandas as pd
-import os
-import pickle
-
+from sklearn.model_selection import train_test_split
 from sklearn.feature_extraction import DictVectorizer
 from sklearn.linear_model import LinearRegression
 from sklearn.metrics import mean_squared_error
-import xgboost as xgb
+import mlflow
+import mlflow.sklearn
+import os
 
-#import mlflow
-
-#mlflow.set_tracking_uri("http://localhost:5000")
-#mlflow.set_experiment("nyc-taxi-experiment")
-
-#models_folder = Path('models')
-#models_folder.mkdir(exist_ok=True)
-
-# Default arguments for the DAG
 default_args = {
     'owner': 'airflow',
     'depends_on_past': False,
     'retries': 1,
     'retry_delay': timedelta(minutes=5),
+    'execution_timeout': timedelta(minutes=10),
 }
 
-# Define the DAG
 with DAG(
     dag_id='duration_prediction_dag',
     description='Airflow DAG to train and evaluate taxi ride duration prediction model',
@@ -36,48 +27,83 @@ with DAG(
     default_args=default_args,
 ) as dag:
 
-    def extract_data():
+    def extract_data(**kwargs):
+        cols = ['tpep_pickup_datetime', 'tpep_dropoff_datetime', 'PULocationID', 'DOLocationID']
+        url = 'https://d37ci6vzurychx.cloudfront.net/trip-data/yellow_tripdata_2023-03.parquet'
+        df = pd.read_parquet(url, columns=cols)
 
-        url = f'https://d37ci6vzurychx.cloudfront.net/trip-data/yellow_tripdata_2023-03.parquet'
-        df = pd.read_parquet(url)
+        print(f"Extracted {len(df):,} rows")
+        df['duration'] = (
+            df.tpep_dropoff_datetime
+              .sub(df.tpep_pickup_datetime)
+              .dt
+              .total_seconds()
+              .div(60)
+        )
+        df = df[(df.duration >= 1) & (df.duration <= 60)].copy()
 
-        print(df.shape[0], 'rows extracted')
+        print(f"Extracted and cleaned {len(df):,} rows")
+        df['PULocationID'] = df['PULocationID'].astype(str)
+        df['DOLocationID'] = df['DOLocationID'].astype(str)
 
-        df['duration'] = df.tpep_dropoff_datetime - df.tpep_pickup_datetime
-        df.duration = df.duration.apply(lambda td: td.total_seconds() / 60)
+        out_dir = '/tmp/airflow_dfs'
+        os.makedirs(out_dir, exist_ok=True)
+        out_path = os.path.join(out_dir, 'cleaned_df.parquet')
+        df.to_parquet(out_path, index=False)
 
-        df = df[(df.duration >= 1) & (df.duration <= 60)]
+        # push only the filepath
+        kwargs['ti'].xcom_push(key='df_path', value=out_path)
+        print(f"Wrote cleaned DataFrame to {out_path}")
 
-        print(df.shape[0], 'rows after filtering')
+    def prepare_features(**kwargs):
+        mlflow.set_tracking_uri("http://mlflow:5000")  #mlflow  ("http://localhost:5000")
+        mlflow.set_experiment("homework-3-nyc-taxi")
 
+        ti = kwargs['ti']
+        df_path = ti.xcom_pull(key='df_path', task_ids='extract_data')
+        df = pd.read_parquet(df_path)
+
+        df['target'] = df['duration']
         categorical = ['PULocationID', 'DOLocationID']
-        df[categorical] = df[categorical].astype(str)
 
-        df['PU_DO'] = df['PULocationID'] + '_' + df['DOLocationID']
+        train_df, val_df = train_test_split(df, test_size=0.2, random_state=42)
 
-        return df
+        dv = DictVectorizer()
+        train_dicts = train_df[categorical].to_dict(orient='records')
+        val_dicts   = val_df[categorical].to_dict(orient='records')
+        X_train = dv.fit_transform(train_dicts)
+        X_val   = dv.transform(val_dicts)
+        y_train = train_df['target'].values
+        y_val   = val_df['target'].values
 
+        with mlflow.start_run():
+            lr = LinearRegression()
+            lr.fit(X_train, y_train)
+            y_pred = lr.predict(X_val)
+            rmse = mean_squared_error(y_val, y_pred, squared=False)
 
-    # Define tasks
-    t1 = PythonOperator(
+            mlflow.log_param("model_type", "LinearRegression")
+            mlflow.log_metric("rmse", rmse)
+            mlflow.log_metric(intercept_name := "intercept", lr.intercept_)
+            mlflow.sklearn.log_model(
+                sk_model=lr,
+                artifact_path="models",
+                input_example=X_val[:1],
+                signature=mlflow.models.signature.infer_signature(X_val, y_pred)
+            )
+
+        print(f"Logged LinearRegression model with RMSE={rmse:.3f}")
+
+    extract_data_task = PythonOperator(
         task_id='extract_data',
         python_callable=extract_data,
+        provide_context=True,
     )
 
-"""    t2 = PythonOperator(
+    prepare_features_task = PythonOperator(
         task_id='prepare_features',
-        python_callable=prepare_features
+        python_callable=prepare_features,
+        provide_context=True,
     )
 
-    t3 = PythonOperator(
-        task_id='train_model',
-        python_callable=train_model
-    )
-
-    t4 = PythonOperator(
-        task_id='evaluate_model',
-        python_callable=evaluate
-    )"""
-
-    # Task dependencies
-t1 #>> t2 >> t3 >> t4
+    extract_data_task >> prepare_features_task

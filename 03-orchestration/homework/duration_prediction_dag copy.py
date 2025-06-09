@@ -2,18 +2,21 @@ from airflow import DAG
 from airflow.operators.python import PythonOperator
 from datetime import datetime, timedelta
 import pandas as pd
-import os
-import pickle
 
-from sklearn.feature_extraction import DictVectorizer
-from sklearn.linear_model import LinearRegression
-from sklearn.metrics import mean_squared_error
-import xgboost as xgb
+from sklearn.model_selection import train_test_split
 
-#import mlflow
+#import os
+#import pickle
 
-#mlflow.set_tracking_uri("http://localhost:5000")
-#mlflow.set_experiment("nyc-taxi-experiment")
+#from sklearn.feature_extraction import DictVectorizer
+#from sklearn.linear_model import LinearRegression
+#from sklearn.metrics import mean_squared_error
+#import xgboost as xgb
+
+import mlflow
+
+mlflow.set_tracking_uri("http://localhost:5000")
+mlflow.set_experiment("homework-3-nyc-taxi")
 
 #models_folder = Path('models')
 #models_folder.mkdir(exist_ok=True)
@@ -43,6 +46,8 @@ with DAG(
         url = 'https://d37ci6vzurychx.cloudfront.net/trip-data/yellow_tripdata_2023-03.parquet'
         df = pd.read_parquet(url, columns=cols)
 
+        print(f"{len(df):,} rows extracted")
+
         # vectorized duration in minutes
         df['duration'] = (
             df.tpep_dropoff_datetime
@@ -53,28 +58,61 @@ with DAG(
         )
 
         # filter outliers
-        df = df[(df.duration >= 1) & (df.duration <= 60)]
+        df = df[(df['duration'] >= 1) & (df['duration'] <= 60)].copy()
+        #df = df[(df.duration >= 1) & (df.duration <= 60)]
         print(f"{len(df):,} rows after filtering")
 
         # categorical features
-        for col in ('PULocationID', 'DOLocationID'):
-            df[col] = df[col].astype(str)
-        df['PU_DO'] = df['PULocationID'] + '_' + df['DOLocationID']
+        df[['PULocationID', 'DOLocationID']] = df[['PULocationID', 'DOLocationID']].astype(str)
+        
+        #for col in ('PULocationID', 'DOLocationID'):
+        #    df[col] = df[col].astype(str)
+        #df['PU_DO'] = df['PULocationID'] + '_' + df['DOLocationID']
 
         return df
 
 
+    def df_to_dict(df):
+        return df[categorical].to_dict(orient='records')
+
+    def prepare_features(df):
+
+        df_clean['target'] = df_clean['duration']
+        categorical = ['PULocationID', 'DOLocationID']
+
+        train_df, val_df = train_test_split(df_clean, test_size=0.2, random_state=42)
+        dv = DictVectorizer()
+        X_train = dv.fit_transform(df_to_dict(train_df))
+        X_val = dv.transform(df_to_dict(val_df))
+        y_train = train_df['target'].values
+        y_val = val_df['target'].values
+
+        with mlflow.start_run():
+            lr = LinearRegression()
+            lr.fit(X_train, y_train)
+            y_pred = lr.predict(X_val)
+            rmse = mean_squared_error(y_val, y_pred, squared=False)
+            mlflow.log_param("model_type", "LinearRegression")
+            mlflow.log_metric("rmse", rmse)
+            mlflow.sklearn.log_model(
+            sk_model=lr,
+            artifact_path="models",
+            input_example=X_val[:1],
+            signature=mlflow.models.signature.infer_signature(X_val, y_pred)
+            )
+
+
     # Define tasks
-    t1 = PythonOperator(
+    extract_data_task = PythonOperator(
         task_id='extract_data',
         python_callable=extract_data,
     )
 
-"""    t2 = PythonOperator(
+    prepare_features_task = PythonOperator(
         task_id='prepare_features',
         python_callable=prepare_features
     )
-
+    """
     t3 = PythonOperator(
         task_id='train_model',
         python_callable=train_model
@@ -86,4 +124,4 @@ with DAG(
     )"""
 
     # Task dependencies
-t1 #>> t2 >> t3 >> t4
+extract_data_task >> prepare_features_task #>> t3 >> t4
