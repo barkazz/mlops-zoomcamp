@@ -56,7 +56,7 @@ with DAG(
         print(f"Wrote cleaned DataFrame to {out_path}")
 
     def prepare_features(**kwargs):
-        mlflow.set_tracking_uri("http://mlflow-server:5000")  #mlflow-server  ("http://localhost:5000")
+        mlflow.set_tracking_uri("http://mlflow:5000")  #mlflow  ("http://localhost:5000")
         mlflow.set_experiment("homework-3-nyc-taxi")
 
         ti = kwargs['ti']
