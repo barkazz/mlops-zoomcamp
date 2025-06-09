@@ -51,7 +51,14 @@ x-airflow-common:
   # Comment the image line, place your Dockerfile in the directory where you placed the docker-compose.yaml
   # and uncomment the "build" line below, Then run `docker-compose build` to build the images.
   # image: ${AIRFLOW_IMAGE_NAME:-apache/airflow:2.7.3}
-  build: .
+  build:
+    context: .
+    dockerfile: mlflow.dockerfile
+  ports:
+    - "5000:5000"
+  volumes:
+    - "${PWD}/mlflow_data:/home/mlflow_data/"
+
   environment:
     &airflow-common-env
     AIRFLOW__CORE__EXECUTOR: CeleryExecutor
@@ -295,15 +302,6 @@ services:
       <<: *airflow-common-depends-on
       airflow-init:
         condition: service_completed_successfully
-
-mlflow:
-  build:
-    context: .
-    dockerfile: mlflow.dockerfile
-  ports:
-    - "5000:5000"
-  volumes:
-    - "${PWD}/mlflow_data:/home/mlflow_data/"
 
 volumes:
   postgres-db-volume:
