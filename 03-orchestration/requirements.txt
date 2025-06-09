@@ -3,3 +3,5 @@ hyperopt
 xgboost
 fastparquet
 boto3
+pandas
+mlflow==2.12.1
