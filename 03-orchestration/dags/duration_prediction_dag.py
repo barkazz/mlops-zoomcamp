@@ -33,6 +33,8 @@ with DAG(
         url = 'https://d37ci6vzurychx.cloudfront.net/trip-data/yellow_tripdata_2023-03.parquet'
         df = pd.read_parquet(url, columns=cols)
 
+        print(f"Extracted {len(df):,} rows")
+
         # compute duration in minutes
         df['duration'] = (
             df.tpep_dropoff_datetime
@@ -45,13 +47,14 @@ with DAG(
         # filter outliers
         df = df[(df.duration >= 1) & (df.duration <= 60)].copy()
 
+        print(f"Extracted and cleaned {len(df):,} rows")
+
         # categorical features must be strings
         df['PULocationID'] = df['PULocationID'].astype(str)
         df['DOLocationID'] = df['DOLocationID'].astype(str)
 
         # push to XCom
         kwargs['ti'].xcom_push(key='df', value=df)
-        print(f"Extracted and cleaned {len(df):,} rows")
 
     def prepare_features(**kwargs):
 
