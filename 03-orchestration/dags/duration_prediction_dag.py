@@ -84,6 +84,7 @@ with DAG(
 
             mlflow.log_param("model_type", "LinearRegression")
             mlflow.log_metric("rmse", rmse)
+            mlflow.log_metric(intercept_name := "intercept", lr.intercept_)
             mlflow.sklearn.log_model(
                 sk_model=lr,
                 artifact_path="models",
