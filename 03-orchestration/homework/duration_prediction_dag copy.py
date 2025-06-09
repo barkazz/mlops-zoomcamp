@@ -37,21 +37,23 @@ with DAG(
 ) as dag:
 
     def extract_data():
+        # Load only necessary columns to reduce memory
+        cols = ['tpep_pickup_datetime', 'tpep_dropoff_datetime', 'PULocationID', 'DOLocationID']
+        url = 'https://d37ci6vzurychx.cloudfront.net/trip-data/yellow_tripdata_2023-03.parquet'
+        df = pd.read_parquet(url, columns=cols)
 
-        url = f'https://d37ci6vzurychx.cloudfront.net/trip-data/yellow_tripdata_2023-03.parquet'
-        df = pd.read_parquet(url)
-
-        print(df.shape[0], 'rows extracted')
-
+        # Vectorized duration calculation (replace apply with dt accessor)
         df['duration'] = (df.tpep_dropoff_datetime - df.tpep_pickup_datetime).dt.total_seconds() / 60
-
+        
+        # Filter in single step
         df = df[(df.duration >= 1) & (df.duration <= 60)].copy()
-
-        print(df.shape[0], 'rows after filtering')
-
+        
+        # Optimize categorical conversion
         categorical = ['PULocationID', 'DOLocationID']
-        df[categorical] = df[categorical].astype(str)
-
+        df[categorical] = df[categorical].astype('string')
+        df['PU_DO'] = df['PULocationID'] + '_' + df['DOLocationID']
+        
+        # Explicitly return serializable DataFrame
         return df
 
 
