@@ -8,7 +8,7 @@ from sklearn.linear_model import LinearRegression
 from sklearn.metrics import mean_squared_error
 import mlflow
 import mlflow.sklearn
-
+import os
 
 default_args = {
     'owner': 'airflow',
@@ -28,14 +28,11 @@ with DAG(
 ) as dag:
 
     def extract_data(**kwargs):
-        # Load only necessary columns to reduce memory
         cols = ['tpep_pickup_datetime', 'tpep_dropoff_datetime', 'PULocationID', 'DOLocationID']
         url = 'https://d37ci6vzurychx.cloudfront.net/trip-data/yellow_tripdata_2023-03.parquet'
         df = pd.read_parquet(url, columns=cols)
 
         print(f"Extracted {len(df):,} rows")
-
-        # compute duration in minutes
         df['duration'] = (
             df.tpep_dropoff_datetime
               .sub(df.tpep_pickup_datetime)
@@ -43,49 +40,45 @@ with DAG(
               .total_seconds()
               .div(60)
         )
-
-        # filter outliers
         df = df[(df.duration >= 1) & (df.duration <= 60)].copy()
 
         print(f"Extracted and cleaned {len(df):,} rows")
-
-        # categorical features must be strings
         df['PULocationID'] = df['PULocationID'].astype(str)
         df['DOLocationID'] = df['DOLocationID'].astype(str)
 
-        # push to XCom
-        kwargs['ti'].xcom_push(key='df', value=df)
+        out_dir = '/tmp/airflow_dfs'
+        os.makedirs(out_dir, exist_ok=True)
+        out_path = os.path.join(out_dir, 'cleaned_df.parquet')
+        df.to_parquet(out_path, index=False)
+
+        # push only the filepath
+        kwargs['ti'].xcom_push(key='df_path', value=out_path)
+        print(f"Wrote cleaned DataFrame to {out_path}")
 
     def prepare_features(**kwargs):
-
         mlflow.set_tracking_uri("http://localhost:5000")
         mlflow.set_experiment("homework-3-nyc-taxi")
 
         ti = kwargs['ti']
-        df = ti.xcom_pull(key='df', task_ids='extract_data')
+        df_path = ti.xcom_pull(key='df_path', task_ids='extract_data')
+        df = pd.read_parquet(df_path)
 
-        # set up target & features
         df['target'] = df['duration']
         categorical = ['PULocationID', 'DOLocationID']
 
-        # split
         train_df, val_df = train_test_split(df, test_size=0.2, random_state=42)
 
-        # vectorize
         dv = DictVectorizer()
         train_dicts = train_df[categorical].to_dict(orient='records')
         val_dicts   = val_df[categorical].to_dict(orient='records')
         X_train = dv.fit_transform(train_dicts)
         X_val   = dv.transform(val_dicts)
-
         y_train = train_df['target'].values
         y_val   = val_df['target'].values
 
-        # train & log with MLflow
         with mlflow.start_run():
             lr = LinearRegression()
             lr.fit(X_train, y_train)
-
             y_pred = lr.predict(X_val)
             rmse = mean_squared_error(y_val, y_pred, squared=False)
 
