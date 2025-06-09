@@ -93,6 +93,16 @@ with DAG(
             )
 
         print(f"Logged LinearRegression model with RMSE={rmse:.3f}")
+        print(f"intercept={lr.intercept_:.3f}")
+
+        import pickle
+        import pathlib
+
+        output_dir = pathlib.Path("check_model_size")
+        output_dir.mkdir(exist_ok=True)
+        with open(output_dir / "dv.pkl", "wb") as f_out:
+            pickle.dump(dv, f_out)
+        mlflow.log_artifact(str(output_dir / "dv.pkl"))
 
     extract_data_task = PythonOperator(
         task_id='extract_data',
