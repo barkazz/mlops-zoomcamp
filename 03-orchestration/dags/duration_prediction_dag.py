@@ -9,8 +9,6 @@ from sklearn.metrics import mean_squared_error
 import mlflow
 import mlflow.sklearn
 
-mlflow.set_tracking_uri("http://0.0.0.0:5000")
-mlflow.set_experiment("homework-3-nyc-taxi")
 
 default_args = {
     'owner': 'airflow',
@@ -56,6 +54,10 @@ with DAG(
         print(f"Extracted and cleaned {len(df):,} rows")
 
     def prepare_features(**kwargs):
+
+        mlflow.set_tracking_uri("http://localhost:5000")
+        mlflow.set_experiment("homework-3-nyc-taxi")
+
         ti = kwargs['ti']
         df = ti.xcom_pull(key='df', task_ids='extract_data')
 
