@@ -39,7 +39,7 @@ X_val = dv.transform(dicts)
 y_pred = model.predict(X_val)
 
 
-print(y_pred.std())
+print('predicted mean duration is', y_pred.mean())
 
 
 df['ride_id'] = f'{year:04d}/{month:02d}_' + df.index.astype('str')
