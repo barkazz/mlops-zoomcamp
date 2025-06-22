@@ -62,3 +62,8 @@ To stop all services, execute:
 ```bash
 docker-compose down
 ```
+
+
+
+sudo du -sh /* 2>/dev/null | sort -h -r
+--check disk usage
