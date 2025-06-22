@@ -5,7 +5,7 @@ joblib
 pyarrow
 psycopg
 psycopg_binary
-evidently==0.6.7
+evidently
 pandas
 numpy
 scikit-learn
