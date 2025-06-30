@@ -30,3 +30,12 @@ pipenv run pytest -s tests
 
 #4
 
+docker-compose up -d
+
+docker ps
+
+docker-compose down
+
+http://127.0.0.1:4566/
+
+aws s3 mb s3://nyc-duration
