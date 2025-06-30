@@ -61,10 +61,6 @@ aws --endpoint-url=http://localhost:4566 s3 ls
 
 
 
-
-
-
-
 #5
 
 ###pipenv install aiobotocore==2.4.2
@@ -78,7 +74,7 @@ docker run --rm -d -p 4566:4566 localstack/localstack
 export AWS_ACCESS_KEY_ID=test
 export AWS_SECRET_ACCESS_KEY=test
 export AWS_DEFAULT_REGION=us-east-1
-export S3_ENDPOINT_URL=http://localhost:4566
+export S3_ENDPOINT_URL='http://localhost:4566'
 
 export AWS_EC2_METADATA_DISABLED=true
 export AWS_DISABLE_IMDS=true
