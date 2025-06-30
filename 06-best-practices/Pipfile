@@ -4,6 +4,8 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
+aiobotocore = "==2.4.2"
+boto3 = "*"
 
 [dev-packages]
 pytest = "*"
