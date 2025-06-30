@@ -57,8 +57,8 @@ def get_input_path(year, month):
 
 
 def get_output_path(year, month):
-    default_output_pattern = 's3://nyc-duration-prediction-alexey/taxi_type=fhv/year={year:04d}/month={month:02d}/predictions.parquet'
-    #default_output_pattern = f'output/yellow_tripdata_{year:04d}-{month:02d}.parquet'
+    #default_output_pattern = 's3://nyc-duration-prediction-alexey/taxi_type=fhv/year={year:04d}/month={month:02d}/predictions.parquet'
+    default_output_pattern = f'output/yellow_tripdata_{year:04d}-{month:02d}.parquet'
     output_pattern = os.getenv('OUTPUT_FILE_PATTERN', default_output_pattern)
     return output_pattern.format(year=year, month=month)
 
@@ -73,7 +73,7 @@ def main(year, month):
     df['ride_id'] = f'{year:04d}/{month:02d}_' + df.index.astype('str')
 
     with open('model.bin', 'rb') as f_in:
-    dv, lr = pickle.load(f_in)
+        dv, lr = pickle.load(f_in)
 
     dicts = df[categorical].to_dict(orient='records')
     X_val = dv.transform(dicts)
