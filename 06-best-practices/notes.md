@@ -1,5 +1,5 @@
 
-
+***
 
 #1
 
@@ -7,7 +7,7 @@ mkdir output
 
 python batch.py 2023 3
 
-
+***
 
 #2
 
@@ -18,7 +18,7 @@ Alternatively, run a command inside the virtualenv with pipenv run.
 
 mkdir tests
 
-
+***
 
 #3
 
@@ -32,7 +32,7 @@ This turns off output capturing, so you’ll see all your print statements as th
 
 pipenv run pytest -s tests
 
-
+***
 
 #4
 
@@ -59,7 +59,7 @@ aws --endpoint-url=http://localhost:4566 s3 mb s3://nyc-duration
 
 aws --endpoint-url=http://localhost:4566 s3 ls
 
-
+***
 
 #5
 
